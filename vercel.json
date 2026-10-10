@@ -8,11 +8,16 @@
   ],
   "routes": [
     {
+      "src": "/static/(.*)",
+      "dest": "/static/$1"
+    },
+    {
       "src": "/(.*)",
-      "dest": "web_app.py"
+      "dest": "/web_app.py"
     }
   ],
   "env": {
-    "FAKE_RC_URL": "https://locketgold.hoanganh1mw.workers.dev"
+    "FAKE_RC_URL": "https://locketgold.hoanganh1mw.workers.dev",
+    "PYTHONPATH": "/var/task"
   }
 }

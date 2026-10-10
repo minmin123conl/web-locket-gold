@@ -19,7 +19,12 @@ import aiohttp
 from flask import Flask, jsonify, render_template, request, send_from_directory
 
 BASE_DIR = Path(__file__).resolve().parent
-OUTPUT_DIR = BASE_DIR / "output"
+# Trên Vercel: dùng /tmp (read-write), local: dùng output/
+IS_VERCEL = bool(os.getenv("VERCEL")) or os.getenv("AWS_EXECUTION_ENV") is not None
+if IS_VERCEL:
+    OUTPUT_DIR = Path("/tmp/output")
+else:
+    OUTPUT_DIR = BASE_DIR / "output"
 OUTPUT_DIR.mkdir(exist_ok=True)
 FAKE_RC_URL = os.getenv("FAKE_RC_URL", "https://locketgold.hoanganh1mw.workers.dev").strip().rstrip("/")
 REMOTE_STATUS_ENABLED = True  # Bật luôn để check remote status
@@ -35,17 +40,19 @@ _last_result: Optional[Dict[str, Any]] = None
 
 def _run_async(coro: Any) -> Any:
     """Run a coroutine safely from sync Flask handlers."""
+    # Flask không có running loop, dùng asyncio.run trực tiếp
     try:
         asyncio.get_running_loop()
     except RuntimeError:
         return asyncio.run(coro)
+    # Nếu có running loop (trường hợp hiếm), chạy trong thread mới
     value: List[Any] = []
     error: List[BaseException] = []
 
     def runner() -> None:
         try:
             value.append(asyncio.run(coro))
-        except BaseException as exc:  # pragma: no cover
+        except BaseException as exc:
             error.append(exc)
 
     thread = threading.Thread(target=runner, daemon=True)

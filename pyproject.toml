@@ -5,7 +5,7 @@ build-backend = "hatchling.build"
 [project]
 name = "locket-gold-web"
 version = "0.1.0"
-description = "Locket Gold - No VPN Solution"
+description = "Locket Gold status-check demo"
 requires-python = ">=3.8"
 
 [tool.vercel]
