@@ -3,82 +3,101 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="theme-color" content="#0e1628">
-  <meta name="description" content="Bảng kiểm tra trạng thái Locket Gold dùng cho môi trường thử nghiệm">
-  <title>Locket Gold · Status Lab</title>
+  <meta name="theme-color" content="#f1f1ef">
+  <meta name="description" content="Locket Gold status lab">
+  <title>Locket Gold — Status Lab</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="{{ url_for('static', filename='app.css') }}">
 </head>
 <body>
-  <div class="page-glow page-glow--one" aria-hidden="true"></div>
-  <div class="page-glow page-glow--two" aria-hidden="true"></div>
-  <main class="shell">
-    <header class="topbar">
-      <a class="brand" href="/" aria-label="Locket Gold home">
-        <span class="brand-mark" aria-hidden="true">✦</span>
-        <span>Locket <em>Gold</em></span>
+  <div class="ambient ambient--left" aria-hidden="true"></div>
+  <div class="ambient ambient--right" aria-hidden="true"></div>
+  <div class="grain" aria-hidden="true"></div>
+
+  <main class="site-shell">
+    <header class="nav-bar">
+      <a class="brand" href="/" aria-label="Locket Gold — trang chủ">
+        <span class="brand-symbol"><span>LG</span></span>
+        <span class="brand-name">locket<span>gold</span></span>
       </a>
-      <span class="mode-pill"><span class="pulse-dot"></span>{{ 'REMOTE' if remote_enabled else 'DEMO MODE' }}</span>
+      <div class="nav-right">
+        <span class="nav-label">STATUS LAB</span>
+        <span class="mode-chip"><i></i>{{ 'REMOTE' if remote_enabled else 'DEMO' }}</span>
+      </div>
     </header>
 
-    <section class="hero">
-      <div class="eyebrow">STATUS LAB <span></span> 01</div>
-      <h1>Kiểm tra trạng thái<br><span>gọn và rõ ràng.</span></h1>
-      <p class="hero-copy">Nhập UID hoặc link hồ sơ để tạo một báo cáo kiểm tra. Luồng này chỉ đọc dữ liệu từ nguồn được cấu hình.</p>
+    <section class="hero-block">
+      <div class="hero-meta"><span class="meta-line"></span><span>01 / CHECKER</span></div>
+      <div class="hero-grid">
+        <h1>Less noise.<br><span>More clarity.</span></h1>
+        <div class="hero-intro">
+          <p>Kiểm tra trạng thái hồ sơ trong một không gian tối giản, tập trung vào thông tin quan trọng nhất.</p>
+          <span class="scroll-hint"><b>↘</b> SCROLL TO EXPLORE</span>
+        </div>
+      </div>
     </section>
 
-    <section class="workspace" aria-label="Status checker">
-      <form class="checker-card" id="activateForm" novalidate>
-        <div class="card-heading">
+    <section class="checker-layout" aria-label="Status checker">
+      <form class="panel panel--primary" id="activateForm" novalidate>
+        <div class="panel-topline">
           <div>
-            <p class="card-kicker">IDENTIFIER</p>
+            <span class="overline">IDENTIFIER</span>
             <h2>Thông tin hồ sơ</h2>
           </div>
-          <span class="step-count">01 <i>/</i> 02</span>
+          <span class="panel-index">01</span>
         </div>
-        <label class="field-label" for="username">UID hoặc link hồ sơ</label>
-        <div class="input-wrap">
-          <span class="input-icon" aria-hidden="true">⌁</span>
-          <input id="username" name="username" autocomplete="off" maxlength="512" placeholder="Ví dụ: 28 ký tự UID hoặc locket.cam/..." required>
-          <button type="button" class="clear-btn" id="clearInput" aria-label="Xóa nội dung" hidden>×</button>
+
+        <div class="field-block">
+          <label for="username">UID hoặc link hồ sơ</label>
+          <div class="input-shell">
+            <span class="input-prefix" aria-hidden="true">/</span>
+            <input id="username" name="username" autocomplete="off" maxlength="512" placeholder="Dán UID hoặc locket.cam/..." required>
+            <button class="clear-button" id="clearInput" type="button" aria-label="Xóa nội dung" hidden>×</button>
+          </div>
+          <p class="field-caption">UID gồm 28 ký tự · link từ locket.cam hoặc locketapp.com</p>
         </div>
-        <p class="field-hint">Chấp nhận UID 28 ký tự hoặc link từ locket.cam / locketapp.com.</p>
-        <button class="primary-btn" id="submitBtn" type="submit">
-          <span>Kiểm tra trạng thái</span><span class="btn-arrow" aria-hidden="true">↗</span>
+
+        <button class="action-button" id="submitBtn" type="submit">
+          <span class="action-label">Kiểm tra trạng thái</span>
+          <span class="action-icon" aria-hidden="true">↗</span>
+          <span class="button-sheen" aria-hidden="true"></span>
         </button>
-        <p class="privacy-note"><span aria-hidden="true">⌁</span> Không lưu thông tin nhập ngoài báo cáo trong phiên hiện tại.</p>
+        <div class="panel-footnote"><span class="tiny-lock" aria-hidden="true">◌</span><span>Chỉ đọc · Không thay đổi dữ liệu hồ sơ</span></div>
       </form>
 
-      <aside class="info-card">
-        <div class="info-icon" aria-hidden="true">◎</div>
-        <p class="card-kicker">QUY TRÌNH</p>
-        <h2>Hai bước,<br>một kết quả.</h2>
-        <ol class="steps">
-          <li><span>01</span><div><strong>Nhận diện</strong><small>Kiểm tra định dạng UID và link.</small></div></li>
-          <li><span>02</span><div><strong>Đối chiếu</strong><small>Đọc trạng thái từ nguồn thử nghiệm.</small></div></li>
-        </ol>
-        <div class="info-footer"><span class="pulse-dot"></span><span>{{ 'Nguồn remote đã bật' if remote_enabled else 'Nguồn local đang tắt' }}</span></div>
+      <aside class="panel panel--secondary">
+        <div class="secondary-icon" aria-hidden="true"><span></span><span></span><span></span></div>
+        <span class="overline">THE FLOW</span>
+        <h2>Hai bước.<br><em>Một kết quả.</em></h2>
+        <div class="flow-list">
+          <div class="flow-item"><span>01</span><div><strong>Nhận diện</strong><small>Kiểm tra định dạng đầu vào.</small></div></div>
+          <div class="flow-item"><span>02</span><div><strong>Đối chiếu</strong><small>Đọc dữ liệu từ nguồn đã chọn.</small></div></div>
+        </div>
+        <div class="connection-state"><i></i><span>{{ 'Nguồn remote đang hoạt động' if remote_enabled else 'Đang ở chế độ local demo' }}</span></div>
       </aside>
     </section>
 
     <section class="result-panel" id="resultPanel" aria-live="polite" hidden>
-      <div class="result-icon" id="resultIcon" aria-hidden="true">✓</div>
-      <div class="result-content">
-        <div class="result-topline"><p class="card-kicker">KẾT QUẢ KIỂM TRA</p><span id="resultSource" class="source-badge">DEMO</span></div>
+      <div class="result-mark" id="resultIcon" aria-hidden="true">✓</div>
+      <div class="result-body">
+        <div class="result-heading"><span class="overline">RESULT / 02</span><span class="source-chip" id="resultSource">DEMO</span></div>
         <h2 id="resultTitle">Đã nhận dữ liệu</h2>
-        <p id="resultMessage"></p>
-        <dl class="result-meta">
+        <p class="result-message" id="resultMessage"></p>
+        <dl class="result-details">
           <div><dt>UID</dt><dd id="resultUid">—</dd></div>
-          <div><dt>Trạng thái</dt><dd id="resultStatus">—</dd></div>
-          <div><dt>Hết hạn</dt><dd id="resultExpires">—</dd></div>
+          <div><dt>TRẠNG THÁI</dt><dd id="resultStatus">—</dd></div>
+          <div><dt>HẾT HẠN</dt><dd id="resultExpires">—</dd></div>
         </dl>
-        <a class="download-link" id="downloadGuide" href="/download/guide.txt" hidden>Tải báo cáo <span>↗</span></a>
+        <a class="report-link" id="downloadGuide" href="/download/guide.txt" hidden><span>Tải báo cáo</span><b>↗</b></a>
       </div>
     </section>
 
-    <footer class="footer"><span>LOCKET GOLD · STATUS LAB</span><span>Local-first experiment</span></footer>
+    <footer class="site-footer">
+      <span>© LOCKET GOLD / STATUS LAB</span>
+      <span>BUILT FOR CLARITY <b>—</b> 2026</span>
+    </footer>
   </main>
   <script src="{{ url_for('static', filename='app.js') }}" defer></script>
 </body>

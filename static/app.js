@@ -3,6 +3,7 @@
   const input = document.querySelector('#username');
   const clear = document.querySelector('#clearInput');
   const button = document.querySelector('#submitBtn');
+  const label = button?.querySelector('.action-label');
   const panel = document.querySelector('#resultPanel');
   const icon = document.querySelector('#resultIcon');
   const title = document.querySelector('#resultTitle');
@@ -13,19 +14,35 @@
   const expires = document.querySelector('#resultExpires');
   const guide = document.querySelector('#downloadGuide');
 
-  const setClearState = () => { clear.hidden = input.value.length === 0; };
+  if (!form || !input || !button || !panel) return;
+
+  const setClearState = () => {
+    clear.hidden = input.value.length === 0;
+  };
+
+  const setLoading = (loading) => {
+    button.disabled = loading;
+    button.setAttribute('aria-busy', String(loading));
+    if (label) label.textContent = loading ? 'Đang kiểm tra…' : 'Kiểm tra trạng thái';
+  };
+
   input.addEventListener('input', setClearState);
-  clear.addEventListener('click', () => { input.value = ''; input.focus(); setClearState(); });
+  clear?.addEventListener('click', () => {
+    input.value = '';
+    input.focus();
+    setClearState();
+  });
 
   const showResult = (data, isError = false) => {
+    const active = Boolean(data.active);
     panel.hidden = false;
-    panel.classList.toggle('is-error', isError || !data.active);
-    icon.textContent = isError ? '!' : (data.active ? '✓' : '—');
-    title.textContent = isError ? 'Không thể kiểm tra' : (data.active ? 'Trạng thái đang hoạt động' : 'Chưa có trạng thái hoạt động');
+    panel.classList.toggle('is-error', isError || !active);
+    icon.textContent = isError ? '!' : active ? '✓' : '—';
+    title.textContent = isError ? 'Không thể kiểm tra' : active ? 'Trạng thái đang hoạt động' : 'Chưa có trạng thái hoạt động';
     message.textContent = data.message || data.error || 'Đã hoàn tất kiểm tra.';
     source.textContent = (data.source || 'demo').toUpperCase();
     uid.textContent = data.uid || '—';
-    status.textContent = isError ? 'Lỗi' : (data.active ? 'Active' : 'Inactive');
+    status.textContent = isError ? 'Lỗi' : active ? 'Active' : 'Inactive';
     expires.textContent = data.expires || '—';
     guide.hidden = isError || !data.guide_file;
     panel.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
@@ -34,15 +51,26 @@
   form.addEventListener('submit', async (event) => {
     event.preventDefault();
     const value = input.value.trim();
-    if (!value) { showResult({ error: 'Vui lòng nhập UID hoặc link hồ sơ.' }, true); input.focus(); return; }
-    button.disabled = true;
-    button.querySelector('span').textContent = 'Đang kiểm tra…';
+    if (!value) {
+      showResult({ error: 'Vui lòng nhập UID hoặc link hồ sơ.' }, true);
+      input.focus();
+      return;
+    }
+
+    setLoading(true);
     try {
-      const response = await fetch('/activate', { method: 'POST', headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' }, body: JSON.stringify({ username: value }) });
+      const response = await fetch('/activate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
+        body: JSON.stringify({ username: value }),
+      });
       const data = await response.json();
       if (!response.ok) throw new Error(data.error || 'Yêu cầu không hợp lệ.');
       showResult(data);
-    } catch (error) { showResult({ error: error.message }, true); }
-    finally { button.disabled = false; button.querySelector('span').textContent = 'Kiểm tra trạng thái'; }
+    } catch (error) {
+      showResult({ error: error.message || 'Không thể kết nối máy chủ.' }, true);
+    } finally {
+      setLoading(false);
+    }
   });
 })();
