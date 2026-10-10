@@ -1,0 +1,27 @@
+# Ignore sensitive files
+locketgold_novpn.mobileconfig
+server.crt
+server.key
+*.pem
+*.key
+.env
+oauth.*
+*.env.local
+
+# Ignore output files (generated after activation)
+/output/
+
+# Ignore Python cache
+__pycache__/
+*.pyc
+*.pyo
+.pyc
+
+# Ignore Vercel/Node artifacts
+node_modules/
+next.config.js
+out/
+<.vercel>
+
+# Ignore OS files
+.DS_Store
