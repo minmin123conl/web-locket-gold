@@ -40,7 +40,7 @@
     icon.textContent = isError ? '✕' : active ? '✓' : '—';
     title.textContent = isError ? 'Không thể kích hoạt' : active ? 'Gold đang hoạt động!' : 'Chưa kích hoạt';
     message.textContent = data.message || data.error || 'Đã kiểm tra xong.';
-    source.textContent = (data.source || 'demo').toUpperCase();
+    source.textContent = (data.source || 'remote').toUpperCase();
     uid.textContent = data.uid || '—';
     status.textContent = isError ? 'Lỗi' : active ? 'Active' : 'Inactive';
     expires.textContent = data.expires || '—';

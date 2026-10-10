@@ -2,10 +2,6 @@
   "version": 2,
   "builds": [
     {
-      "src": "static/**",
-      "use": "@vercel/static"
-    },
-    {
       "src": "web_app.py",
       "use": "@vercel/python"
     }
@@ -16,13 +12,15 @@
       "dest": "/static/$1"
     },
     {
+      "src": "/(healthz|activate|download/.*)",
+      "dest": "/web_app.py"
+    },
+    {
       "src": "/(.*)",
       "dest": "/web_app.py"
     }
   ],
   "env": {
-    "FAKE_RC_URL": "https://locketgold.hoanganh1mw.workers.dev",
-    "PYTHONPATH": "/var/task"
-  },
-  "$schema": "https://openapi.vercel.sh/vercel.json"
+    "FAKE_RC_URL": "https://locketgold.hoanganh1mw.workers.dev"
+  }
 }
