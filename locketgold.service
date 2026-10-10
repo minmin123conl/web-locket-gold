@@ -1,0 +1,15 @@
+[Unit]
+Description=Locket Gold Fake RC API
+After=network.target
+
+[Service]
+Type=simple
+WorkingDirectory=/opt/locketgold
+ExecStart=/usr/bin/node /opt/locketgold/server.js
+Restart=always
+RestartSec=5
+StandardOutput=journal
+StandardError=journal
+
+[Install]
+WantedBy=multi-user.target

@@ -1,0 +1,307 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Locket Gold - Auto Activation</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            color: #333;
+        }
+
+        .container {
+            max-width: 420px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 2rem;
+        }
+
+        .header h1 {
+            font-size: 1.8rem;
+            background: white;
+            padding: 0.5rem 1rem;
+            border-radius: 20px;
+            display: inline-block;
+            color: #764ba2;
+        }
+
+        .header p {
+            margin-top: 0.5rem;
+            color: #666;
+            font-size: 0.9rem;
+        }
+
+        .card {
+            background: white;
+            border-radius: 15px;
+            padding: 1.5rem;
+            margin-bottom: 1rem;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+
+        .card h2 {
+            color: #764ba2;
+            margin-bottom: 1rem;
+            font-size: 1.2rem;
+        }
+
+        .form-group {
+            margin-bottom: 1rem;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 0.5rem;
+            font-weight: 500;
+            color: #555;
+        }
+
+        .form-group input {
+            width: 100%;
+            padding: 0.8rem;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            font-size: 1rem;
+            transition: border-color 0.3s;
+        }
+
+        .form-group input:focus {
+            outline: none;
+            border-color: #764ba2;
+        }
+
+        .btn {
+            width: 100%;
+            padding: 0.9rem;
+            background: #764ba2;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background 0.3s;
+            margin-top: 1rem;
+        }
+
+        .btn:hover {
+            background: #6a3d97;
+        }
+
+        .btn:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+        }
+
+        .result {
+            margin-top: 1.5rem;
+            padding: 1rem;
+            border-radius: 10px;
+            display: none;
+        }
+
+        .result.success {
+            background: #d4edda;
+            border: 1px solid #c3e6cb;
+            color: #155724;
+        }
+
+        .result.error {
+            background: #f8d7da;
+            border: 1px solid #f5c6cb;
+            color: #721c24;
+        }
+
+        .result.active {
+            background: #d1e7dd;
+            border: 1px solid #badbcc;
+            color: #0f5132;
+        }
+
+        .result i {
+            margin-right: 0.5rem;
+        }
+
+        .guide-section {
+            margin-top: 2rem;
+            padding-top: 2rem;
+            border-top: 1px solid #eee;
+        }
+
+        .download-btn {
+            display: inline-block;
+            margin-top: 0.8rem;
+            padding: 0.6rem 1.2rem;
+            background: #28a745;
+            color: white;
+            text-decoration: none;
+            border-radius: 20px;
+            font-size: 0.9rem;
+        }
+
+        .download-btn:hover {
+            background: #218838;
+        }
+
+        .status-indicator {
+            width: 8px;
+            height: 8px;
+            background: #dc3545;
+            border-radius: 50%;
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0% { opacity: 1; }
+            50% { opacity: 0.5; }
+            100% { opacity: 1; }
+        }
+
+        @media (max-width: 420px) {
+            .container { padding: 1rem; }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🔑 Locket Gold</h1>
+            <p>Kích hoạt Gold + Hướng dẫn DNS tự động</p>
+        </div>
+
+        <!-- Flash messages -->
+        {% with messages = get_flashed_messages() %}
+          {% if messages %}
+            <div style="text-align:center; margin-bottom:1rem;">
+              {% for msg in messages %}
+                <div style="padding:0.5rem 1rem; background:#{color_map.get(msg[0], 'f8d7da')}; 
+                            color:#{color_text_map.get(msg[0], '721c24')}; 
+                            border-radius:8px; margin:0.3rem 0;">
+                  {{ msg[1] }}
+                </div>
+              {% endfor %}
+            </div>
+          {% endif %}
+        {% endwith %}
+
+        <!-- Main form -->
+        <div class="card">
+            <h2>1/3 Nhập username hoặc link</h2>
+            
+            <form action="/activate" method="POST" id="activateForm">
+                <div class="form-group">
+                    <label for="username">Username Locket hoặc link profile</label>
+                    <input type="text" id="username" name="username" 
+                           placeholder="Ví dụ: username hoặc https://locket.cam/abc..."
+                           required>
+                </div>
+                
+                <button type="submit" class="btn" id="submitBtn">
+                    🚀 Kích hoạt Gold ngay
+                </button>
+            </form>
+        </div>
+
+        <!-- Result display -->
+        <div class="result" id="resultDiv" style="display: none;">
+            <i class="ide"></i>
+            <span id="resultText"></span>
+        </div>
+
+        <!-- Guide section (shown after success) -->
+        <div class="guide-section" id="guideSection" style="display: none;">
+            <h2>📱 Hướng dẫn cài đặt DNS (không VPN)</h2>
+            
+            <p>Nhấp nút bên dưới để tải file hướng dẫn và profile mobileconfig:</p>
+            
+            <a href="/download/guide" class="download-btn">📄 Tải file hướng dẫn (.txt)</a><br><br>
+            
+            <a href="/download/mobileconfig" class="download-btn">📱 Tải profile mobileconfig</a>
+            
+            <hr style="margin: 1.5rem 0;">
+            
+            <p><strong>Bước nhanh:</strong></p>
+            <ol style="padding-left: 1.2rem;">
+                <li>Tắt Shadowrocket/VPN hoàn toàn</li>
+                <li>Mở file hướng dẫn, làm theo 4 bước</li>
+                <li>Cài mobileconfig trên iPhone</li>
+                <li>Mở Locket → Check Gold</li>
+            </ol>
+            
+            <p><small>⚠️ Lần đầu chạy cần có Cloudflare Worker đã deploy. 
+            IP Worker có thể đổi → cập nhật rule NextDNS.</small></p>
+        </div>
+    </div>
+
+    <script>
+        // Xử lý form submit
+        document.getElementById('activateForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            const btn = document.getElementById('submitBtn');
+            const input = document.getElementById('username');
+            const resultDiv = document.getElementById('resultDiv');
+            const guideSection = document.getElementById('guideSection');
+            
+            btn.disabled = true;
+            btn.innerHTML = '⏳ Đang xử lý...';
+            
+            try {
+                const formData = new FormData();
+                formData.append('username', input.value.trim());
+                
+                const response = await fetch('/activate', {
+                    method: 'POST',
+                    body: formData
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    // Hiển thị kết quả
+                    resultDiv.style.display = 'block';
+                    guideSection.style.display = 'block';
+                    
+                    if (data.gold_active) {
+                        resultDiv.className = 'result success';
+                        resultDiv.innerHTML = `<i class="fas fa-check-circle"></i> 
+                            Kích hoạt thành công! UID: <strong>${data.uid}</strong><br>
+                            Trạng thái: <strong>Gold active</strong><br>
+            Hết hạn: <strong>${data.expires || 'Vĩnh viễn (2099)'}</strong>`;
+                    } else {
+                        resultDiv.className = 'result error';
+                        resultDiv.innerHTML = `<i class="fas fa-times-circle"></i> 
+                            Kích hoạt thất bại. Có thể do:`;
+                    }
+                    
+                    // Hiện các nút download
+                    document.querySelector('.guide-section .download-btn').style.display = 'inline-block';
+                    
+                } else {
+                    resultDiv.className = 'result error';
+                    resultDiv.innerHTML = `<i class="fas fa-exclamation-triangle"></i> ${data.error || 'Lỗi không xác định'}`;
+                }
+            } catch (err) {
+                resultDiv.className = 'result error';
+                resultDiv.innerHTML = `<i class="fas fa-exclamation-circle"></i> Lỗi kết nối: ${err.message}`;
+            } finally {
+                btn.disabled = false;
+                btn.innerHTML = '🚀 Kích hoạt Gold ngay';
+            }
+        });
+    </script>
+</body>
+</html>

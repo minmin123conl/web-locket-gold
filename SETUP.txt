@@ -1,0 +1,91 @@
+
+╔══════════════════════════════════════════════════════════════════╗
+║            LOCKET GOLD — NO VPN SETUP (v3)                      ║
+╚══════════════════════════════════════════════════════════════════╝
+
+HOW IT WORKS
+─────────────
+Without VPN:  Locket → api.revenuecat.com (real) → no subscription → Gold lost
+With this:    Locket → DNS rewrites to our fake server → Gold forever
+No VPN icon. Works on WiFi + Cellular. Survives app restart + phone reboot.
+
+═══════════════════════════════════════════════════════════════════
+STEP 1 — Deploy Cloudflare Worker (fake RC API server)
+═══════════════════════════════════════════════════════════════════
+
+1. Create free account at cloudflare.com
+2. Go to Workers & Pages → Create Worker
+3. Paste rc_fake_worker.js content into the editor
+4. Click Deploy
+5. Note your Worker URL:
+   https://rc-fake-api.YOUR_SUBDOMAIN.workers.dev
+
+═══════════════════════════════════════════════════════════════════
+STEP 2 — Get the Worker IP for DNS rewrite
+═══════════════════════════════════════════════════════════════════
+
+Run in terminal:
+  nslookup rc-fake-api.YOUR_SUBDOMAIN.workers.dev
+
+Note the IP — you'll use it in the NextDNS rewrite rule.
+(CF Workers IPs are stable: typically 104.x.x.x range)
+
+═══════════════════════════════════════════════════════════════════
+STEP 3 — Set up NextDNS rewrite rule
+═══════════════════════════════════════════════════════════════════
+
+1. Go to nextdns.io → your profile → Rewrites tab
+2. Add rewrite:
+   Name:    api.revenuecat.com
+   Answer:  [IP from Step 2]
+3. Save
+
+This makes iOS resolve api.revenuecat.com → your CF Worker.
+
+═══════════════════════════════════════════════════════════════════
+STEP 4 — Install mobileconfig on iPhone
+═══════════════════════════════════════════════════════════════════
+
+1. Open locketgold_novpn.mobileconfig file
+2. Edit the file — replace YOUR_NEXTDNS_ID with your NextDNS profile ID
+   (find it in nextdns.io → your profile → the ID in the URL e.g. "ab12cd")
+   Also replace the ServerAddresses IPs with your NextDNS profile IPs
+   (find at: nextdns.io/profile → Setup → IPs shown there)
+3. Host the edited .mobileconfig somewhere (GitHub raw, your server, AirDrop it)
+4. Open URL on iPhone → Settings → Profile Downloaded → Install
+5. Go to Settings → General → VPN & Device Management → trust the LocketGold-CA cert
+   Settings → General → About → Certificate Trust Settings → enable LocketGold-CA
+
+═══════════════════════════════════════════════════════════════════
+STEP 5 — Test
+═══════════════════════════════════════════════════════════════════
+
+1. Turn OFF Shadowrocket completely
+2. Open Locket
+3. Gold should be active — no VPN icon anywhere
+
+WHAT HAPPENS:
+  Locket calls api.revenuecat.com
+  → iOS DNS (NextDNS DoT) resolves to your CF Worker IP
+  → CF Worker returns Gold subscriber JSON
+  → Locket sees valid Gold subscription
+  → iOS trusts the TLS because our CA cert is installed
+
+═══════════════════════════════════════════════════════════════════
+ALTERNATIVE: Self-host instead of Cloudflare Worker
+═══════════════════════════════════════════════════════════════════
+
+If you want a VPS instead:
+1. Deploy rc_fake_worker.js as a Node.js server (or use the logic in any framework)
+2. Install server.crt + server.key from /certs/ folder on your server
+   Configure nginx/caddy to use them for TLS
+3. Point NextDNS rewrite to your VPS IP directly
+   (skip the workers.dev step, use VPS IP directly in NextDNS)
+
+Files provided:
+  rc_fake_worker.js          — Cloudflare Worker code
+  locketgold_novpn.mobileconfig — iOS profile (CA cert + DNS)
+  certs/ca.crt               — CA cert (already embedded in mobileconfig)
+  certs/server.crt           — Server TLS cert for api.revenuecat.com
+  certs/server.key           — Server TLS private key
+  wrangler.toml              — CF Worker deploy config
