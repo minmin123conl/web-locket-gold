@@ -4,12 +4,148 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="theme-color" content="#0a0a0a">
-  <meta name="description" content="Locket Gold — Mua và kích hoạt Gold vĩnh viễn, không cần VPN">
-  <title>Locket Gold — Kích hoạt Gold vĩnh viễn</title>
+  <title>Locket Gold — Kích hoạt Gold</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=Space+Grotesk:wght@600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="{{ url_for('static', filename='app.css') }}">
+  <style>
+    /* Minimal reset */
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    html { scroll-behavior: smooth; }
+    body {
+      background: #0a0a0a;
+      color: #fafafa;
+      font: 400 15px/1.6 'Inter', system-ui, sans-serif;
+      min-height: 100vh;
+      overflow-x: hidden;
+    }
+    a { color: inherit; text-decoration: none; }
+    button { cursor: pointer; border: none; background: none; }
+    
+    /* Background */
+    .bg-glow { position: fixed; border-radius: 50%; pointer-events: none; z-index: 0; }
+    .bg-glow--gold { width: 600px; height: 600px; top: -250px; right: -150px; background: radial-gradient(circle, rgba(212,168,83,.1) 0, transparent 70%); }
+    .bg-glow--dark { width: 400px; height: 400px; bottom: -200px; left: -150px; background: radial-gradient(circle, rgba(30,30,50,.5) 0, transparent 70%); }
+    .noise { position: fixed; inset: 0; z-index: 1; pointer-events: none; opacity: .03; background: url("data:image/svg+xml,...") repeat; }
+    
+    /* Container */
+    .container { max-width: 1000px; margin: 0 auto; padding: 40px 20px; position: relative; z-index: 2; }
+    
+    /* Header */
+    .header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 40px; }
+    .logo { display: flex; align-items: center; gap: 10px; }
+    .logo-icon { width: 32px; height: 32px; border-radius: 10px; background: #d4a853; display: flex; align-items: center; justify-content: center; color: #111; font-size: 14px; font-weight: 700; }
+    .logo-text { font: 700 18px 'Space Grotesk', sans-serif; letter-spacing: -.04em; }
+    .logo-text span { color: #d4a853; }
+    .nav-right { display: flex; align-items: center; gap: 12px; }
+    .live-badge { display: inline-flex; align-items: center; gap: 6px; background: #1a1a1f; border: 1px solid #3a3a40; border-radius: 999px; padding: 8px 14px; font: 600 10px 'Inter', sans-serif; letter-spacing: .12em; color: #888; }
+    .live-badge i { width: 5px; height: 5px; border-radius: 50%; background: #4ade80; box-shadow: 0 0 0 3px rgba(74,222,128,.15); animation: pulse 2s infinite; }
+    @keyframes pulse { 0%,100% { opacity: 1; } 50% { opacity: .4; } }
+    
+    /* Hero */
+    .hero { text-align: center; margin-bottom: 50px; }
+    .hero-title { font: 800 36px 'Space Grotesk', sans-serif; letter-spacing: -.06em; margin-bottom: 20px; }
+    .hero-highlight { background: linear-gradient(135deg, #f0c96e 0%, #d4a853 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
+    .hero-sub { color: #888; font-size: 15px; max-width: 500px; margin: 0 auto; line-height: 1.6; }
+    .hero-stats { display: flex; align-items: center; justify-content: center; gap: 24px; margin-top: 30px; }
+    .stat { text-align: center; }
+    .stat-value { display: block; font: 700 24px 'Space Grotesk', sans-serif; color: #d4a853; margin-bottom: 6px; }
+    .stat-label { font: 500 10px 'Inter', sans-serif; letter-spacing: .1em; color: #666; text-transform: uppercase; }
+    .stat-divider { width: 1px; height: 30px; background: #3a3a40; }
+    
+    /* Features */
+    .features { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px; margin-bottom: 50px; }
+    .feature { background: #15151f; border: 1px solid #3a3a40; border-radius: 12px; padding: 24px; transition: border-color .3s; }
+    .feature:hover { border-color: #d4a853; }
+    .feature-icon { font-size: 20px; display: block; margin-bottom: 12px; }
+    .feature h3 { font: 600 14px 'Inter', sans-serif; margin-bottom: 8px; }
+    .feature p { color: #777; font-size: 13px; line-height: 1.5; }
+    
+    /* Activate Section */
+    .activate-section { margin-bottom: 50px; }
+    .activate-card { background: #15151f; border: 1px solid #3a3a40; border-radius: 16px; padding: 32px; }
+    .activate-header { margin-bottom: 24px; }
+    .activate-header h2 { font: 600 20px 'Space Grotesk', sans-serif; letter-spacing: -.04em; margin-bottom: 8px; }
+    .activate-desc { color: #777; font-size: 13px; }
+    .activate-step { font: 500 11px 'Inter', sans-serif; color: #777; padding-top: 4px; border-top: 1px solid #3a3a40; margin-top: 12px; }
+    
+    /* Form */
+    .form-group { margin-bottom: 20px; }
+    .form-group label { display: block; font: 600 13px 'Inter', sans-serif; margin-bottom: 8px; }
+    .input-wrapper { display: flex; align-items: center; gap: 10px; background: #2a2a30; border: 1px solid #3a3a40; border-radius: 14px; min-height: 54px; padding: 0 14px; transition: border-color .2s; }
+    .input-wrapper:focus-within { border-color: #d4a853; box-shadow: 0 0 0 3px rgba(212,168,83,.15); }
+    .input-icon { color: #777; font-size: 14px; }
+    .input-wrapper input { background: none; border: none; outline: none; flex: 1; min-width: 0; font-size: 14px; }
+    .input-wrapper input::placeholder { color: #777; }
+    .clear-btn { color: #777; font-size: 20px; padding: 0 4px; }
+    .clear-btn:hover { color: #fafafa; transform: rotate(90deg); }
+    .input-hint { color: #777; font-size: 11px; margin-top: 8px; }
+    
+    /* CTA Button */
+    .cta-button { width: 100%; min-height: 50px; padding: 0 20px; background: linear-gradient(135deg, #f0c96e 0%, #d4a853 100%); border-radius: 12px; overflow: hidden; font: 600 14px 'Inter', sans-serif; color: #111; margin-top: 16px; transition: box-shadow .3s; }
+    .cta-button:hover { box-shadow: 0 10px 25px rgba(212,168,83,.3); }
+    .cta-button:disabled { opacity: .55; cursor: wait; box-shadow: none; }
+    .cta-arrow { display: flex; align-items: center; justify-content: center; width: 30px; height: 30px; border-radius: 50%; background: rgba(0,0,0,.12); font-size: 14px; margin-left: 12px; }
+    .secure-note { margin-top: 12px; color: #777; font-size: 11px; display: flex; align-items: center; gap: 6px; }
+    .lock-icon { font-size: 12px; }
+    
+    /* Side Info */
+    .side-card { background: #15151f; border: 1px solid #3a3a40; border-radius: 16px; padding: 24px; display: flex; flex-direction: column; }
+    .side-card h3 { font: 600 18px 'Space Grotesk', sans-serif; letter-spacing: -.04em; margin-bottom: 20px; }
+    .steps { display: flex; flex-direction: column; }
+    .step { display: flex; gap: 12px; padding: 12px 0; border-top: 1px solid #3a3a40; }
+    .step:last-child { border-bottom: 1px solid #3a3a40; }
+    .step-num { color: #777; font: 500 10px 'Inter', sans-serif; padding-top: 2px; }
+    .step strong { display: block; font-size: 13px; margin-bottom: 4px; }
+    .step small { color: #777; font-size: 11px; }
+    .side-status { margin-top: auto; color: #777; font: 500 11px 'Inter', sans-serif; }
+    .side-status i { width: 5px; height: 5px; border-radius: 50%; background: #4ade80; box-shadow: 0 0 0 3px rgba(74,222,128,.12); }
+    
+    /* Result */
+    .result-section { margin-bottom: 50px; }
+    .result-section[hidden] { display: none; }
+    .result-card { display: flex; gap: 16px; background: #15151f; border: 1px solid #3a3a40; border-radius: 16px; padding: 24px; }
+    .result-icon-wrap { display: flex; align-items: center; justify-content: center; flex-shrink: 0; width: 40px; height: 40px; border-radius: 12px; background: #2a2a34; color: #d4a853; font-size: 18px; }
+    .result-content { flex: 1; min-width: 0; }
+    .result-top { display: flex; align-items: gap: 10px; margin-bottom: 8px; }
+    .result-source-chip { display: inline-flex; background: #2a2a30; border: 1px solid #3a3a40; border-radius: 999px; padding: 4px 8px; font: 600 8px 'Inter', sans-serif; letter-spacing: .08em; color: #888; }
+    .result-content h2 { font: 600 18px 'Space Grotesk', sans-serif; letter-spacing: -.03em; margin-bottom: 6px; }
+    .result-msg { color: #777; font-size: 12px; margin-bottom: 12px; }
+    .result-grid { display: flex; flex-wrap: wrap; gap: 16px; margin-bottom: 12px; }
+    .result-item { min-width: 100px; }
+    .result-item-label { display: block; font: 600 8px 'Inter', sans-serif; letter-spacing: .1em; color: #777; margin-bottom: 5px; }
+    .result-item-value { font-size: 12px; font-weight: 500; word-break: break-all; }
+    .report-link { display: inline-flex; align-items: center; gap: 6px; font-size: 12px; font-weight: 600; color: #d4a853; text-decoration: none; }
+    .report-link span { border-bottom: 1px solid #d4a853; padding-bottom: 1px; }
+    
+    /* FAQ */
+    .faq-section { margin-bottom: 50px; }
+    .faq-section h2 { font: 600 20px 'Space Grotesk', sans-serif; letter-spacing: -.04em; margin-bottom: 20px; }
+    .faq-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+    .faq-item { background: #15151f; border: 1px solid #3a3a40; border-radius: 12px; padding: 20px; transition: border-color .3s; }
+    .faq-item:hover { border-color: #d4a853; }
+    .faq-item h4 { font: 600 14px 'Inter', sans-serif; margin-bottom: 10px; }
+    .faq-item p { color: #777; font-size: 13px; line-height: 1.5; }
+    
+    /* Footer */
+    .footer { padding: 20px 0; border-top: 1px solid #3a3a40; display: flex; align-items: center; justify-content: space-between; }
+    .footer-brand { display: flex; align-items: gap: 8px; font: 500 12px 'Inter', sans-serif; }
+    .footer-brand .logo-icon { width: 24px; height: 24px; border-radius: 8px; background: #d4a853; display: flex; align-items: center; justify-content: center; color: #111; font-size: 11px; }
+    .footer-links { display: flex; align-items: center; gap: 8px; font-size: 11px; color: #888; }
+    .footer-dot { color: #777; }
+    
+    /* Responsive */
+    @media (max-width: 640px) {
+      .container { padding: 20px 16px; }
+      .features { grid-template-columns: 1fr; }
+      .faq-grid { grid-template-columns: 1fr; }
+    }
+    
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after { animation-duration: .01ms !important; transition-duration: .01ms !important; }
+    }
+  </style>
 </head>
 <body>
   <div class="bg-glow bg-glow--gold" aria-hidden="true"></div>
@@ -17,8 +153,8 @@
   <div class="noise" aria-hidden="true"></div>
 
   <main class="container">
-    <!-- NAV -->
-    <nav class="nav">
+    <!-- Header -->
+    <header class="header">
       <a class="logo" href="/">
         <span class="logo-icon">✦</span>
         <span class="logo-text">Locket<span>Gold</span></span>
@@ -26,163 +162,88 @@
       <div class="nav-right">
         <span class="live-badge"><i></i>HOẠT ĐỘNG</span>
       </div>
-    </nav>
-
-    <!-- HERO -->
-    <header class="hero">
-      <div class="hero-badge">
-        <span class="hero-badge-dot"></span>
-        <span>GÓI VĨNH VIỄN — KHÔNG CẦN GIA HẠN</span>
-      </div>
-      <h1 class="hero-title">
-        Locket Gold<br>
-        <span class="hero-highlight">vĩnh viễn.</span>
-      </h1>
-      <p class="hero-sub">Kích hoạt Gold trên iPhone mà không cần VPN. Hoạt động trên WiFi và 4G/5G. Không icon VPN. Không gián đoạn.</p>
-
-      <div class="hero-stats">
-        <div class="stat">
-          <span class="stat-value">∞</span>
-          <span class="stat-label">Thời hạn</span>
-        </div>
-        <div class="stat-divider"></div>
-        <div class="stat">
-          <span class="stat-value">0đ</span>
-          <span class="stat-label">Phí ẩn</span>
-        </div>
-        <div class="stat-divider"></div>
-        <div class="stat">
-          <span class="stat-value">24/7</span>
-          <span class="stat-label">Hỗ trợ</span>
-        </div>
-      </div>
     </header>
 
-    <!-- TÍNH NĂNG -->
-    <section class="features">
-      <div class="feature-card">
-        <span class="feature-icon">🔒</span>
-        <h3>Không VPN</h3>
-        <p>Hoạt động bằng DNS rewriting. Không cần bật/tắt VPN, không có icon VPN trên thanh trạng thái.</p>
-      </div>
-      <div class="feature-card">
-        <span class="feature-icon">📱</span>
-        <h3>Tương thích iOS</h3>
-        <p>Hỗ trợ iPhone chạy iOS 14+. Cài đặt 1 lần, dùng mãi mãi. Không ảnh hưởng app khác.</p>
-      </div>
-      <div class="feature-card">
-        <span class="feature-icon">⚡</span>
-        <h3>Kích hoạt tức thì</h3>
-        <p>Nhập UID hoặc link Locket → Gold hoạt động ngay lập tức. Không cần chờ đợi.</p>
-      </div>
-      <div class="feature-card">
-        <span class="feature-icon">🌐</span>
-        <h3>WiFi + 4G/5G</h3>
-        <p>Hoạt động trên mọi kết nối mạng. WiFi nhà, WiFi công cộng, hay dữ liệu di động đều được.</p>
+    <!-- Hero -->
+    <section class="hero">
+      <h1 class="hero-title">Locket Gold</h1>
+      <p class="hero-highlight">vĩnh viễn.</h1>
+      <p class="hero-sub">Kích hoạt Gold trên iPhone mà không cần VPN. Hoạt động trên WiFi và 4G/5G.</p>
+      <div class="hero-stats">
+        <div class="stat"><span class="stat-value">∞</span><span class="stat-label">Thời hạn</span></div>
+        <div class="stat-divider"></div>
+        <div class="stat"><span class="stat-value">0đ</span><span class="stat-label">Phí ẩn</span></div>
+        <div class="stat-divider"></div>
+        <div class="stat"><span class="stat-value">24/7</span><span class="stat-label">Hỗ trợ</span></div>
       </div>
     </section>
 
-    <!-- CHECKER / ACTIVATE -->
-    <section class="activate-section" aria-label="Kích hoạt Gold">
+    <!-- Features -->
+    <section class="features">
+      <div class="feature"><span class="feature-icon">🔒</span><h3>Không VPN</h3><p>Hoạt động bằng DNS rewriting.</p></div>
+      <div class="feature"><span class="feature-icon">📱</span><h3>Tương thích iOS</h3><p>Hỗ trợ iOS 14+. Cài đặt 1 lần, dùng mãi mãi.</p></div>
+      <div class="feature"><span class="feature-icon">⚡</span><h3>Kích activate tức thì</h3><p>Nhập UID → Gold hoạt động ngay.</p></div>
+      <div class="feature"><span class="feature-icon">🌐</span><h3>WiFi + 4G/5G</h3><p>Hoạt động trên mọi kết nối.</p></div>
+    </section>
+
+    <!-- Activate -->
+    <section class="activate-section">
       <div class="activate-card">
         <div class="activate-header">
           <div>
             <span class="section-tag">BƯỚC 1</span>
             <h2>Nhập thông tin Locket</h2>
-            <p class="activate-desc">Nhập UID (28 ký tự) hoặc dán link hồ sơ Locket để kiểm tra và kích hoạt Gold.</p>
+            <p class="activate-desc">Nhập UID (28 ký tự) hoặc dán link hồ sơ Locket.</p>
           </div>
           <span class="activate-step">01 / 02</span>
         </div>
-
         <form id="activateForm" novalidate>
           <div class="form-group">
             <label for="username">UID hoặc Link hồ sơ Locket</label>
             <div class="input-wrapper">
               <span class="input-icon">⌘</span>
-              <input
-                id="username"
-                name="username"
-                autocomplete="off"
-                maxlength="512"
-                placeholder="Dán UID 28 ký tự hoặc link locket.cam/..."
-                required
-              >
+              <input id="username" name="username" autocomplete="off" maxlength="512" placeholder="Dán UID 28 ký tự hoặc link locket.cam/..." required>
               <button class="clear-btn" id="clearInput" type="button" aria-label="Xóa" hidden>×</button>
             </div>
             <p class="input-hint">UID gồm 28 ký tự · Link từ locket.cam hoặc locketapp.com</p>
           </div>
-
           <button class="cta-button" id="submitBtn" type="submit">
-            <span class="action-label">Kích hoạt Gold ngay</span>
+            <span class="action-label">Kíchactivate Gold ngay</span>
             <span class="cta-arrow" aria-hidden="true">→</span>
-            <span class="cta-shine" aria-hidden="true"></span>
           </button>
-
-          <p class="secure-note">
-            <span class="lock-icon">🛡</span>
-            An toàn · Không lưu dữ liệu · Không ảnh hưởng tài khoản
-          </p>
+          <p class="secure-note"><span class="lock-icon">🛡</span> An toàn · Không lưu dữ liệu</p>
         </form>
       </div>
-
-      <!-- Side info -->
       <aside class="side-info">
         <div class="side-card">
           <span class="section-tag">QUY TRÌNH</span>
           <h3>Chỉ 2 bước</h3>
           <div class="steps">
-            <div class="step">
-              <span class="step-num">01</span>
-              <div>
-                <strong>Nhập thông tin</strong>
-                <small>UID hoặc link Locket</small>
-              </div>
-            </div>
-            <div class="step">
-              <span class="step-num">02</span>
-              <div>
-                <strong>Kích hoạt</strong>
-                <small>Gold hoạt động ngay</small>
-              </div>
-            </div>
+            <div class="step"><span class="step-num">01</span><div><strong>Nhập thông tin</strong><small>UID hoặc link Locket</small></div></div>
+            <div class="step"><span class="step-num">02</span><div><strong>Kíchactivate</strong><small>Gold hoạt động ngay</small></div></div>
           </div>
-          <div class="side-status">
-            <i></i>
-            <span>Hệ thống đang hoạt động</span>
-          </div>
+          <div class="side-status"><i></i><span>Hệ thống đang hoạt động</span></div>
         </div>
       </aside>
     </section>
 
-    <!-- RESULT -->
-    <section class="result-section" id="resultPanel" aria-live="polite" hidden>
+    <!-- Result -->
+    <section class="result-section" id="resultPanel" hidden>
       <div class="result-card">
         <div class="result-icon-wrap" id="resultIcon" aria-hidden="true">✓</div>
         <div class="result-content">
           <div class="result-top">
             <span class="section-tag">KẾT QUẢ</span>
-            <span class="result-source-chip" id="resultSource">DEMO</span>
+            <span class="result-source-chip" id="resultSource">REMOTE</span>
           </div>
-          <h2 id="resultTitle">Đã kiểm tra xong</h2>
-          <p class="result-msg" id="resultMessage"></p>
+          <h2 id="resultTitle">Gold đang hoạt động!</h2>
+          <p id="resultMessage" class="result-msg"></p>
           <div class="result-grid">
-            <div class="result-item">
-              <span class="result-item-label">UID</span>
-              <span class="result-item-value" id="resultUid">—</span>
-            </div>
-            <div class="result-item">
-              <span class="result-item-label">TRẠNG THÁI</span>
-              <span class="result-item-value" id="resultStatus">—</span>
-            </div>
-            <div class="result-item">
-              <span class="result-item-label">HẾT HẠN</span>
-              <span class="result-item-value" id="resultExpires">—</span>
-            </div>
+            <div class="result-item"><span class="result-item-label">UID</span><span class="result-item-value" id="resultUid">—</span></div>
+            <div class="result-item"><span class="result-item-label">TRẠNG THÁI</span><span class="result-item-value" id="resultStatus">—</span></div>
+            <div class="result-item"><span class="result-item-label">HẾT HẠN</span><span class="result-item-value" id="resultExpires">—</span></div>
           </div>
-          <a class="report-link" id="downloadGuide" href="/download/guide.txt" hidden>
-            <span>Tải báo cáo kích hoạt</span>
-            <b>↗</b>
-          </a>
+          <a class="report-link" id="downloadGuide" href="/download/guide.txt" hidden><span>Tải báo cáo</span><b>↗</b></a>
         </div>
       </div>
     </section>
@@ -192,38 +253,17 @@
       <span class="section-tag">FAQ</span>
       <h2>Câu hỏi thường gặp</h2>
       <div class="faq-grid">
-        <div class="faq-item">
-          <h4>Có cần bật VPN không?</h4>
-          <p>Không. Locket Gold dùng DNS rewriting, không cần VPN. Không có icon VPN trên thanh trạng thái iPhone.</p>
-        </div>
-        <div class="faq-item">
-          <h4>Gold hết hạn sau bao lâu?</h4>
-          <p>Gói vĩnh viễn. Không cần gia hạn, không cần thanh toán lại. Dùng mãi mãi.</p>
-        </div>
-        <div class="faq-item">
-          <h4>Có ảnh hưởng app khác không?</h4>
-          <p>Không. DNS rewriting chỉ áp dụng cho Locket. Các app khác hoạt động bình thường.</p>
-        </div>
-        <div class="faq-item">
-          <h4>Làm sao nếu Gold bị mất?</h4>
-          <p>Liên hệ hỗ trợ 24/7. Chúng tôi sẽ kích hoạt lại miễn phí.</p>
-        </div>
+        <div class="faq-item"><h4>Có cần bật VPN không?</h4><p>Không. Locket Gold dùng DNS rewriting.</p></div>
+        <div class="faq-item"><h4>Gold hết hạn sau bao lâu?</h4><p>Gói vĩnh viễn. Không cần gia hạn.</p></div>
+        <div class="faq-item"><h4>Có ảnh hưởng app khác không?</h4><p>Không. Chỉ áp dụng cho Locket.</p></div>
+        <div class="faq-item"><h4>Làm sao nếu Gold bị mất?</h4><p>Liên hệ hỗ trợ 24/7.</p></div>
       </div>
     </section>
 
-    <!-- FOOTER -->
+    <!-- Footer -->
     <footer class="footer">
-      <div class="footer-brand">
-        <span class="logo-icon">✦</span>
-        <span>Locket Gold</span>
-      </div>
-      <div class="footer-links">
-        <span>© 2026 Locket Gold</span>
-        <span class="footer-dot">·</span>
-        <span>Hỗ trợ 24/7</span>
-        <span class="footer-dot">·</span>
-        <span>Hoạt động trên iOS 14+</span>
-      </div>
+      <div class="footer-brand"><span class="logo-icon">✦</span><span>Locket Gold</span></div>
+      <div class="footer-links"><span>© 2026 Locket Gold</span><span class="footer-dot">·</span><span>Hỗ trợ 24/7</span><span class="footer-dot">·</span><span>iOS 14+</span></div>
     </footer>
   </main>
 
