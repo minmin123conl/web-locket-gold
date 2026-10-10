@@ -2,6 +2,10 @@
   "version": 2,
   "builds": [
     {
+      "src": "static/**",
+      "use": "@vercel/static"
+    },
+    {
       "src": "web_app.py",
       "use": "@vercel/python"
     }
@@ -19,5 +23,6 @@
   "env": {
     "FAKE_RC_URL": "https://locketgold.hoanganh1mw.workers.dev",
     "PYTHONPATH": "/var/task"
-  }
+  },
+  "$schema": "https://openapi.vercel.sh/vercel.json"
 }
