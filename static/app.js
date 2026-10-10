@@ -23,7 +23,7 @@
   const setLoading = (loading) => {
     button.disabled = loading;
     button.setAttribute('aria-busy', String(loading));
-    if (label) label.textContent = loading ? 'Đang kiểm tra…' : 'Kiểm tra trạng thái';
+    if (label) label.textContent = loading ? 'Đang kích hoạt…' : 'Kích hoạt Gold ngay';
   };
 
   input.addEventListener('input', setClearState);
@@ -37,9 +37,9 @@
     const active = Boolean(data.active);
     panel.hidden = false;
     panel.classList.toggle('is-error', isError || !active);
-    icon.textContent = isError ? '!' : active ? '✓' : '—';
-    title.textContent = isError ? 'Không thể kiểm tra' : active ? 'Trạng thái đang hoạt động' : 'Chưa có trạng thái hoạt động';
-    message.textContent = data.message || data.error || 'Đã hoàn tất kiểm tra.';
+    icon.textContent = isError ? '✕' : active ? '✓' : '—';
+    title.textContent = isError ? 'Không thể kích hoạt' : active ? 'Gold đang hoạt động!' : 'Chưa kích hoạt';
+    message.textContent = data.message || data.error || 'Đã kiểm tra xong.';
     source.textContent = (data.source || 'demo').toUpperCase();
     uid.textContent = data.uid || '—';
     status.textContent = isError ? 'Lỗi' : active ? 'Active' : 'Inactive';
@@ -52,7 +52,7 @@
     event.preventDefault();
     const value = input.value.trim();
     if (!value) {
-      showResult({ error: 'Vui lòng nhập UID hoặc link hồ sơ.' }, true);
+      showResult({ error: 'Vui lòng nhập UID hoặc link hồ sơ Locket.' }, true);
       input.focus();
       return;
     }

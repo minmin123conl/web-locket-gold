@@ -3,102 +3,230 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="theme-color" content="#f1f1ef">
-  <meta name="description" content="Locket Gold status lab">
-  <title>Locket Gold — Status Lab</title>
+  <meta name="theme-color" content="#0a0a0a">
+  <meta name="description" content="Locket Gold — Mua và kích hoạt Gold vĩnh viễn, không cần VPN">
+  <title>Locket Gold — Kích hoạt Gold vĩnh viễn</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="{{ url_for('static', filename='app.css') }}">
 </head>
 <body>
-  <div class="ambient ambient--left" aria-hidden="true"></div>
-  <div class="ambient ambient--right" aria-hidden="true"></div>
-  <div class="grain" aria-hidden="true"></div>
+  <div class="bg-glow bg-glow--gold" aria-hidden="true"></div>
+  <div class="bg-glow bg-glow--dark" aria-hidden="true"></div>
+  <div class="noise" aria-hidden="true"></div>
 
-  <main class="site-shell">
-    <header class="nav-bar">
-      <a class="brand" href="/" aria-label="Locket Gold — trang chủ">
-        <span class="brand-symbol"><span>LG</span></span>
-        <span class="brand-name">locket<span>gold</span></span>
+  <main class="container">
+    <!-- NAV -->
+    <nav class="nav">
+      <a class="logo" href="/">
+        <span class="logo-icon">✦</span>
+        <span class="logo-text">Locket<span>Gold</span></span>
       </a>
       <div class="nav-right">
-        <span class="nav-label">STATUS LAB</span>
-        <span class="mode-chip"><i></i>{{ 'REMOTE' if remote_enabled else 'DEMO' }}</span>
+        <span class="live-badge"><i></i>{{ 'ACTIVE' if remote_enabled else 'DEMO' }}</span>
+      </div>
+    </nav>
+
+    <!-- HERO -->
+    <header class="hero">
+      <div class="hero-badge">
+        <span class="hero-badge-dot"></span>
+        <span>GÓI VĨNH VIỄN — KHÔNG CẦN GIA HẠN</span>
+      </div>
+      <h1 class="hero-title">
+        Locket Gold<br>
+        <span class="hero-highlight">vĩnh viễn.</span>
+      </h1>
+      <p class="hero-sub">Kích hoạt Gold trên iPhone mà không cần VPN. Hoạt động trên WiFi và 4G/5G. Không icon VPN. Không gián đoạn.</p>
+
+      <div class="hero-stats">
+        <div class="stat">
+          <span class="stat-value">∞</span>
+          <span class="stat-label">Thời hạn</span>
+        </div>
+        <div class="stat-divider"></div>
+        <div class="stat">
+          <span class="stat-value">0đ</span>
+          <span class="stat-label">Phí ẩn</span>
+        </div>
+        <div class="stat-divider"></div>
+        <div class="stat">
+          <span class="stat-value">24/7</span>
+          <span class="stat-label">Hỗ trợ</span>
+        </div>
       </div>
     </header>
 
-    <section class="hero-block">
-      <div class="hero-meta"><span class="meta-line"></span><span>01 / CHECKER</span></div>
-      <div class="hero-grid">
-        <h1>Less noise.<br><span>More clarity.</span></h1>
-        <div class="hero-intro">
-          <p>Kiểm tra trạng thái hồ sơ trong một không gian tối giản, tập trung vào thông tin quan trọng nhất.</p>
-          <span class="scroll-hint"><b>↘</b> SCROLL TO EXPLORE</span>
-        </div>
+    <!-- TÍNH NĂNG -->
+    <section class="features">
+      <div class="feature-card">
+        <span class="feature-icon">🔒</span>
+        <h3>Không VPN</h3>
+        <p>Hoạt động bằng DNS rewriting. Không cần bật/tắt VPN, không có icon VPN trên thanh trạng thái.</p>
+      </div>
+      <div class="feature-card">
+        <span class="feature-icon">📱</span>
+        <h3>Tương thích iOS</h3>
+        <p>Hỗ trợ iPhone chạy iOS 14+. Cài đặt 1 lần, dùng mãi mãi. Không ảnh hưởng app khác.</p>
+      </div>
+      <div class="feature-card">
+        <span class="feature-icon">⚡</span>
+        <h3>Kích hoạt tức thì</h3>
+        <p>Nhập UID hoặc link Locket → Gold hoạt động ngay lập tức. Không cần chờ đợi.</p>
+      </div>
+      <div class="feature-card">
+        <span class="feature-icon">🌐</span>
+        <h3>WiFi + 4G/5G</h3>
+        <p>Hoạt động trên mọi kết nối mạng. WiFi nhà, WiFi công cộng, hay dữ liệu di động đều được.</p>
       </div>
     </section>
 
-    <section class="checker-layout" aria-label="Status checker">
-      <form class="panel panel--primary" id="activateForm" novalidate>
-        <div class="panel-topline">
+    <!-- CHECKER / ACTIVATE -->
+    <section class="activate-section" aria-label="Kích hoạt Gold">
+      <div class="activate-card">
+        <div class="activate-header">
           <div>
-            <span class="overline">IDENTIFIER</span>
-            <h2>Thông tin hồ sơ</h2>
+            <span class="section-tag">BƯỚC 1</span>
+            <h2>Nhập thông tin Locket</h2>
+            <p class="activate-desc">Nhập UID (28 ký tự) hoặc dán link hồ sơ Locket để kiểm tra và kích hoạt Gold.</p>
           </div>
-          <span class="panel-index">01</span>
+          <span class="activate-step">01 / 02</span>
         </div>
 
-        <div class="field-block">
-          <label for="username">UID hoặc link hồ sơ</label>
-          <div class="input-shell">
-            <span class="input-prefix" aria-hidden="true">/</span>
-            <input id="username" name="username" autocomplete="off" maxlength="512" placeholder="Dán UID hoặc locket.cam/..." required>
-            <button class="clear-button" id="clearInput" type="button" aria-label="Xóa nội dung" hidden>×</button>
+        <form id="activateForm" novalidate>
+          <div class="form-group">
+            <label for="username">UID hoặc Link hồ sơ Locket</label>
+            <div class="input-wrapper">
+              <span class="input-icon">⌘</span>
+              <input
+                id="username"
+                name="username"
+                autocomplete="off"
+                maxlength="512"
+                placeholder="Dán UID 28 ký tự hoặc link locket.cam/..."
+                required
+              >
+              <button class="clear-btn" id="clearInput" type="button" aria-label="Xóa" hidden>×</button>
+            </div>
+            <p class="input-hint">UID gồm 28 ký tự · Link từ locket.cam hoặc locketapp.com</p>
           </div>
-          <p class="field-caption">UID gồm 28 ký tự · link từ locket.cam hoặc locketapp.com</p>
-        </div>
 
-        <button class="action-button" id="submitBtn" type="submit">
-          <span class="action-label">Kiểm tra trạng thái</span>
-          <span class="action-icon" aria-hidden="true">↗</span>
-          <span class="button-sheen" aria-hidden="true"></span>
-        </button>
-        <div class="panel-footnote"><span class="tiny-lock" aria-hidden="true">◌</span><span>Chỉ đọc · Không thay đổi dữ liệu hồ sơ</span></div>
-      </form>
+          <button class="cta-button" id="submitBtn" type="submit">
+            <span class="action-label">Kích hoạt Gold ngay</span>
+            <span class="cta-arrow" aria-hidden="true">→</span>
+            <span class="cta-shine" aria-hidden="true"></span>
+          </button>
 
-      <aside class="panel panel--secondary">
-        <div class="secondary-icon" aria-hidden="true"><span></span><span></span><span></span></div>
-        <span class="overline">THE FLOW</span>
-        <h2>Hai bước.<br><em>Một kết quả.</em></h2>
-        <div class="flow-list">
-          <div class="flow-item"><span>01</span><div><strong>Nhận diện</strong><small>Kiểm tra định dạng đầu vào.</small></div></div>
-          <div class="flow-item"><span>02</span><div><strong>Đối chiếu</strong><small>Đọc dữ liệu từ nguồn đã chọn.</small></div></div>
+          <p class="secure-note">
+            <span class="lock-icon">🛡</span>
+            An toàn · Không lưu dữ liệu · Không ảnh hưởng tài khoản
+          </p>
+        </form>
+      </div>
+
+      <!-- Side info -->
+      <aside class="side-info">
+        <div class="side-card">
+          <span class="section-tag">QUY TRÌNH</span>
+          <h3>Chỉ 2 bước</h3>
+          <div class="steps">
+            <div class="step">
+              <span class="step-num">01</span>
+              <div>
+                <strong>Nhập thông tin</strong>
+                <small>UID hoặc link Locket</small>
+              </div>
+            </div>
+            <div class="step">
+              <span class="step-num">02</span>
+              <div>
+                <strong>Kích hoạt</strong>
+                <small>Gold hoạt động ngay</small>
+              </div>
+            </div>
+          </div>
+          <div class="side-status">
+            <i></i>
+            <span>{{ 'Hệ thống đang hoạt động' if remote_enabled else 'Chế độ demo' }}</span>
+          </div>
         </div>
-        <div class="connection-state"><i></i><span>{{ 'Nguồn remote đang hoạt động' if remote_enabled else 'Đang ở chế độ local demo' }}</span></div>
       </aside>
     </section>
 
-    <section class="result-panel" id="resultPanel" aria-live="polite" hidden>
-      <div class="result-mark" id="resultIcon" aria-hidden="true">✓</div>
-      <div class="result-body">
-        <div class="result-heading"><span class="overline">RESULT / 02</span><span class="source-chip" id="resultSource">DEMO</span></div>
-        <h2 id="resultTitle">Đã nhận dữ liệu</h2>
-        <p class="result-message" id="resultMessage"></p>
-        <dl class="result-details">
-          <div><dt>UID</dt><dd id="resultUid">—</dd></div>
-          <div><dt>TRẠNG THÁI</dt><dd id="resultStatus">—</dd></div>
-          <div><dt>HẾT HẠN</dt><dd id="resultExpires">—</dd></div>
-        </dl>
-        <a class="report-link" id="downloadGuide" href="/download/guide.txt" hidden><span>Tải báo cáo</span><b>↗</b></a>
+    <!-- RESULT -->
+    <section class="result-section" id="resultPanel" aria-live="polite" hidden>
+      <div class="result-card">
+        <div class="result-icon-wrap" id="resultIcon" aria-hidden="true">✓</div>
+        <div class="result-content">
+          <div class="result-top">
+            <span class="section-tag">KẾT QUẢ</span>
+            <span class="result-source-chip" id="resultSource">DEMO</span>
+          </div>
+          <h2 id="resultTitle">Đã kiểm tra xong</h2>
+          <p class="result-msg" id="resultMessage"></p>
+          <div class="result-grid">
+            <div class="result-item">
+              <span class="result-item-label">UID</span>
+              <span class="result-item-value" id="resultUid">—</span>
+            </div>
+            <div class="result-item">
+              <span class="result-item-label">TRẠNG THÁI</span>
+              <span class="result-item-value" id="resultStatus">—</span>
+            </div>
+            <div class="result-item">
+              <span class="result-item-label">HẾT HẠN</span>
+              <span class="result-item-value" id="resultExpires">—</span>
+            </div>
+          </div>
+          <a class="report-link" id="downloadGuide" href="/download/guide.txt" hidden>
+            <span>Tải báo cáo kích hoạt</span>
+            <b>↗</b>
+          </a>
+        </div>
       </div>
     </section>
 
-    <footer class="site-footer">
-      <span>© LOCKET GOLD / STATUS LAB</span>
-      <span>BUILT FOR CLARITY <b>—</b> 2026</span>
+    <!-- FAQ -->
+    <section class="faq-section">
+      <span class="section-tag">FAQ</span>
+      <h2>Câu hỏi thường gặp</h2>
+      <div class="faq-grid">
+        <div class="faq-item">
+          <h4>Có cần bật VPN không?</h4>
+          <p>Không. Locket Gold dùng DNS rewriting, không cần VPN. Không có icon VPN trên thanh trạng thái iPhone.</p>
+        </div>
+        <div class="faq-item">
+          <h4>Gold hết hạn sau bao lâu?</h4>
+          <p>Gói vĩnh viễn. Không cần gia hạn, không cần thanh toán lại. Dùng mãi mãi.</p>
+        </div>
+        <div class="faq-item">
+          <h4>Có ảnh hưởng app khác không?</h4>
+          <p>Không. DNS rewriting chỉ áp dụng cho Locket. Các app khác hoạt động bình thường.</p>
+        </div>
+        <div class="faq-item">
+          <h4>Làm sao nếu Gold bị mất?</h4>
+          <p>Liên hệ hỗ trợ 24/7. Chúng tôi sẽ kích hoạt lại miễn phí.</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- FOOTER -->
+    <footer class="footer">
+      <div class="footer-brand">
+        <span class="logo-icon">✦</span>
+        <span>Locket Gold</span>
+      </div>
+      <div class="footer-links">
+        <span>© 2026 Locket Gold</span>
+        <span class="footer-dot">·</span>
+        <span>Hỗ trợ 24/7</span>
+        <span class="footer-dot">·</span>
+        <span>Hoạt động trên iOS 14+</span>
+      </div>
     </footer>
   </main>
+
   <script src="{{ url_for('static', filename='app.js') }}" defer></script>
 </body>
 </html>
