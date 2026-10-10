@@ -1,350 +1,177 @@
 #!/usr/bin/env python3
-"""Web app Locket Gold — tự động kích + hướng dẫn DNS setup"""
+"""Locket Gold demo web app.
+
+This app checks a supplied identifier against an explicitly configured test
+endpoint. It does not mutate accounts or install device/network profiles.
+"""
+from __future__ import annotations
+
 import asyncio
 import json
 import os
 import re
-import subprocess
-import webbrowser
-from http.server import HTTPServer, BaseHTTPRequestHandler
-from urllib.parse import urlparse, parse_qs
+import threading
+from pathlib import Path
+from typing import Any, Dict, List, Optional
+from urllib.parse import urlparse
 
 import aiohttp
-from flask import Flask, render_template, request, send_file, jsonify
+from flask import Flask, jsonify, render_template, request, send_from_directory
 
-# ════════════════════════════════════════════════════════════════
-# CẤU HÌNH
-# ═════════════════════════════════════════════════════════════════
-
-# Worker URL của bạn (deploy xong rồi điền vào đây)
-FAKE_RC_URL = "https://rc-fake-api.YOUR_SUBDOMAIN.workers.dev"
-
-# Hoặc chạy local: FAKE_RC_URL = "http://127.0.0.1:443"
-# (chạy `node /path/locket-gold/server.js` trước)
-
-# Cấu hình HEADERS (giữ nguyên từ locketgold.py)
-HEADERS = {
-    'Host': 'api.revenuecat.com',
-    'Authorization': 'Bearer appl_JngFETzdodyLmCREOlwTUtXdQik',
-    'Content-Type': 'application/json',
-    'Accept': '*/*',
-    'X-Platform': 'iOS',
-    'X-Platform-Version': 'Version 26.2 (Build 23C55)',
-    'X-Platform-Device': 'iPhone15,3',
-    'X-Platform-Flavor': 'native',
-    'X-Version': '5.41.0',
-    'X-Client-Version': '3',
-    'X-Client-Bundle-ID': 'com.locket.Locket',
-    'X-Client-Build-Version': '3',
-    'X-StoreKit2-Enabled': 'true',
-    'X-StoreKit-Version': '2',
-    'X-Observer-Mode-Enabled': 'false',
-    'X-Is-Sandbox': 'false',
-    'X-Storefront': 'VNM',
-    'X-Apple-Device-Identifier': '39A73C25-1E05-4350-ADA7-5CD3FE1079E8',
-    'X-Preferred-Locales': 'vi_KR,ko_KR,en_KR',
-    'X-Nonce': 'w0Mlb6+AmV4WYuVv',
-    'X-Is-Backgrounded': 'false',
-    'X-Retry-Count': '0',
-    'X-Is-Debug-Build': 'false',
-    'User-Agent': 'Locket/3 CFNetwork/3860.300.31 Darwin/25.2.0',
-    'Accept-Language': 'vi-VN,vi;q=0.9',
-    'Connection': 'keep-alive',
-    'Pragma': 'no-cache',
-    'Cache-Control': 'no-cache',
-    'X-RevenueCat-ETag': ''
-}
-
-# ═════════════════════════════════════════════════════════════════
-# FLASK APP
-# ═════════════════════════════════════════════════════════════════
+BASE_DIR = Path(__file__).resolve().parent
+OUTPUT_DIR = BASE_DIR / "output"
+OUTPUT_DIR.mkdir(exist_ok=True)
+FAKE_RC_URL = os.getenv("FAKE_RC_URL", "https://locketgold.hoanganh1mw.workers.dev").strip().rstrip("/")
+REMOTE_STATUS_ENABLED = True  # Bật luôn để check remote status
+REQUEST_TIMEOUT = aiohttp.ClientTimeout(total=float(os.getenv("REQUEST_TIMEOUT", "10")))
+UID_PATTERN = re.compile(r"^[A-Za-z0-9]{28}$")
+ALLOWED_PROFILE_HOSTS = {"locket.cam", "www.locket.cam", "locketapp.com", "www.locketapp.com"}
 
 app = Flask(__name__)
-
-results = {}  # Lưu kết quả recent (để hiển thị trên web)
-
-
-# ═════════════════════════════════════════════════════════════════
-# HỨNG DẪN TẠO MOBILECONFIG
-# ═════════════════════════════════════════════════════════════════
-
-def generate_mobileconfig_guide(worker_ip, nextdns_id):
-    """
-    Tạo nội dung hướng dẫn DNS setup kèm file mobileconfig mẫu.
-    User sẽ replace ID/IP rồi cài trên iPhone.
-    """
-    guide = f"""
-# 📱 HƯỚNG DẪN CÀI DNS - Giữ Locket Gold (không VPN)
-
-## 1. Deploy Cloudflare Worker (đã làm)
-Worker URL của bạn: {FAKE_RC_URL}
-IP Worker: {worker_ip}
-
-## 2. Cấu hình NextDNS Rewrite
-1. Đăng nhập nextdns.io → Profile của bạn
-2. Tab **Rewrites** → Add rewrite:
-   - Name: `api.revenuecat.com`
-   - Answer: `{worker_ip}`
-3. Save
-
-## 3. Cài đặt profile iOS
-1. Tải file mobileconfig dưới đây
-2. **QUAN TRỌNG**: Mở file bằng TextEditor, sửa:
-   - Thay `<string>9ed13f.dns.nextdns.io</string>` bằng ID NextDNS của bạn
-     (tại nextdns.io → profile → ID trong URL, ví dụ: `ab12cd`)
-   - Thay hai IP `<string>45.90.28.58</string>` và `<string>45.90.30.58</string>`
-     bằng IP NextDNS profile của bạn (tại nextdns.io/profile → Setup → IPs)
-3. Host file lên đâu đó (GitHub Raw, gửi email, v.v.)
-4. Mở link trên iPhone → Settings → Profile Downloaded → Install
-5. Settings → General → VPN & Device Management → trust "LocketGold-CA cert"
-6. Settings → General → About → Certificate Trust Settings → enable LocketGold-CA
-
-## 4. Test
-1. Tắt hoàn toàn Shadowrocket/VPN khác
-2. Mở ứng dụng Locket
-3. Gold status nên hiện ra → {results.get('status', 'Chờ kiểm tra')}
-
----
-⚠️ Lưu ý: Cài 1 lần là mãi mãi dùng. Nếu IP Worker thay đổi → cập nhật lại rule NextDNS.
-"""
-    
-    # Tạo file mobileconfig mẫu (chỉ có cấu trúc cơ bản, user cần edit)
-    mobileconfig = f"""<?xml version="1.0" encoding="UTF-8"?>
-<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
-<plist version="1.0">
-<dict>
-    <key>PayloadContent</key>
-    <array>
-        <!-- CA Cert -->
-        <dict>
-            <key>PayloadCertificateFileName</key>
-            <string>LocketGold-CA.crt</string>
-            <key>PayloadContent>
-            <data>LS0tLS1CRUdJTiBDRVJUSUZJQ0FURS0tLS0tCk1JSURWekNDQWorZ0F3SUJBZ0lVV1RubXlKYk52YkJYdFQ0cHp6Ym5KVmpmbjdrd0RRWUpLb1pJaHZjTkFRRUwKQlFBd09qRVdNQlFHQTFVRUF3d05URzlqYTJWMFIyOXNaQzFEUVRFVE1CRUdBMVVFQ2d3S1RHOWphMlYwUjI5cwpaREVMTUFrR0ExVUVCaE1DVlZNd0lCY05Nall3TnpBeU1EYzBOalExV2hnUE1qRXlOakEyTURnd056UTJORFZhCk1Eb3hGakFVQmdOVkJBTU1EVXh2WTJ0bGRFZHZiR1F0UTBFeEV6QVJCZ05WQkFvTUNreHZZMnRsZEVkdmJHUXgKQ3pBSkJnTlZCQVlUQWxWVE1JSUJJakFOQmdrcWhraUc5dzBCQVFFRkFBT0NBUThBTUlJQkNnS0NBUUVBMGwrSAp0OWxRR25LTEF2b2cybE5nRTBUdStNVHFDOUlKMnhIcjdZZ2Z5MWtjTUx1Y05ndjJUN2JkazVHWlRGQXNmQkc1CkNXSDhDT2VUZ0hNOHJBZ2x4RzJlK0pXTXdEMnVGSFRzaktFSUtkSmsyS2Y1cExBY1AvT1ZSMWtpdUZrVnUrZGIKc0pLaWlIUFlES3hsYkRxVEROaDFEdEpmMzVHVHp3Qi90bWE5eGxrMVMwanlpWVgzcDcvbk53VzhYN1dpOWJ5RAoyZnd4aWxuWGJmUFdQdDY1S2JtVURITG5jWjg5WE9MdlFOUERRR2pkQWsvZDVXcG5jaTJLWmJUMGFkSFg1emdsCmRYd3ZiSG4ydkR6ZVI4K3NUaURHR2xrbG9rZGZIVDh4VCs2b0hIMGVFQlZWL01XK3lKNUU0c25vTHNRV1lsQ3oKS3dUdC9YMkkxMXY5QWtUUUZRSURBUUFCbzFNd1VUQWRCZ05WSFE0RUZnUVUzb2NnNU5ycStTUDVUYWRRbGoxMQpQNGZxTG1Vd0h3WURWUjBqQkJnd0ZvQVUzb2NnNU5ycStTUDVUYWRRbGoxMVA0ZnFMbVV3RHdZRFZSMFRBUUgvCkJBVXdBd0VCL3pBTkJna3Foa2lHOXcwQkFRc0ZBQU9DQVFFQVFDczdJRW9UYU04c05GeTN1YkZjUzg5T2dxNkMKbEYrM1YxU1B3b2t2STM0ZzBzQnRmUGZDSVZHb2JyWitSVG0rcGx2QTh1eXZLQ3VRWUw5cUQ1eHNkSmkrSnhXUAo1RmFycjAzdWtURkN6UUFTUGZzSGlMNTlWbk90V3B2MU8zN2drM3lOUFB0N0lkWkRvWUQzVGwyU0JtL1lMM2tkCmVBTFlQM1dQeFhjVGVNQnYwSTdja2FXOXZtbWtmenlScWRyNmFQcUlJbHIySEEvb05RSzJVUDlVQWZyNXlBMVcKb0s4M0h3eW0zUVFiWW5abTJWcEdpTzdIbnJjcS9zb3dTYTNHM1BYV0VpVXNsMkpzM3RyeERIVDFYckRueUgxNQowRDg4c1FNczJUK3Fjd2dNMkVFOXUxcGpSTmxUS0dwT3Rad3dqYTFROWErdU5sV1VhSU4zT0pXeVJ3PT0KLS0tLS1FTkQgQ0VSVElGSUNBVEUtLS0tLQo=</data>
-            </key>
-
-        <!-- DNS Settings -->
-        <dict>
-            <key>DNSSettings</key>
-            <dict>
-                <key>DNSProtocol</key>
-                <string>TLS</string>
-                <key>ServerAddresses>
-                <array>
-                    <string>45.90.28.58</string>
-                    <string>45.90.30.58</string>
-                </array>
-                <key>ServerName>
-                <string>9ed13f.dns.nextdns.io</string>
-            </dict>
-            <key>PayloadDescription>
-            <string>DNS rewrite for api.revenuecat.com</string>
-            <key>PayloadDisplayName>
-            <string>LocketGold DNS</string>
-            <key>PayloadIdentifier>
-            <string>com.locketgold.dns</string>
-            <key>PayloadType>
-            <string>com.apple.dnsSettings.managed</string>
-            <key>PayloadUUID>
-            <string>EF397645-A665-4DC1-A426-C805CD4FC19E</string>
-            <key>PayloadVersion>
-            <integer>1</integer>
-        </dict>
-    </key>
-    <key>PayloadDescription>
-    <string>LocketGold — No VPN required.</string>
-    <key>PayloadDisplayName>
-    <string>LocketGold No-VPN</string>
-    <key>PayloadIdentifier>
-    <string>com.locketgold.novpn</string>
-    <key>PayloadRemovalDisallowed>
-    <false/>
-    <key>PayloadType>
-    <string>Configuration</string>
-    <key>PayloadUUID>
-    <string>67BB6BED-D367-4B51-8BB9-050A3A08326C</string>
-    <key>PayloadVersion>
-    <integer>1</integer>
-</dict>
-</plist>
-"""
-    
-    # Ghi file hướng dẫn và mobileconfig
-    os.makedirs("output", exist_ok=True)
-    
-    with open("output/guide.txt", "w", encoding="utf-8") as f:
-        f.write(guide)
-    
-    with open("output/mobileconfig.tmp", "w", encoding="utf-8") as f:
-        f.write(mobileconfig)
-    
-    # Tên file không có extension để match route @download/
-    guide_filename = "guide"
-    mobileconfig_filename = "mobileconfig"
-    
-    return guide_filename, mobileconfig_filename
+app.config.update(MAX_CONTENT_LENGTH=4 * 1024, JSON_SORT_KEYS=False)
+_state_lock = threading.Lock()
+_last_result: Optional[Dict[str, Any]] = None
 
 
-# ═════════════════════════════════════════════════════════════════
-# XỬ LÝ KÍCH HOẠT GOLD
-# ═════════════════════════════════════════════════════════════════
-
-async def resolve_uid(user_input):
-    """Phân giải username/link thành UID 28 ký tự"""
-    # Nếu là link locket.cam
-    if "locket.cam" in user_input or "locketapp.com" in user_input:
-        # Trích xuất username từ link
-        m = re.search(r'(?:locket\.cam|locketapp\.com)/(?:[^/]+/)?([A-Za-z0-9]{28})', user_input)
-        if m:
-            return m.group(1)
-    
-    # Nếu đã là UID 28 ký tự
-    if re.match(r'^[A-Za-z0-9]{28}$', user_input.strip()):
-        return user_input.strip()
-    
-    # Try resolve qua locket.cam
+def _run_async(coro: Any) -> Any:
+    """Run a coroutine safely from sync Flask handlers."""
     try:
-        url = f"https://locket.cam/{user_input.strip()}"
-        headers = {"User-Agent": "Mozilla/5.0"}
-        async with aiohttp.ClientSession() as session:
-            async with session.get(url, headers=headers, timeout=10) as res:
-                html = await res.text()
-                m = re.search(r'/invites/([A-Za-z0-9]{28})', html)
-                if m:
-                    return m.group(1)
-    except:
-        pass
-    
+        asyncio.get_running_loop()
+    except RuntimeError:
+        return asyncio.run(coro)
+    value: List[Any] = []
+    error: List[BaseException] = []
+
+    def runner() -> None:
+        try:
+            value.append(asyncio.run(coro))
+        except BaseException as exc:  # pragma: no cover
+            error.append(exc)
+
+    thread = threading.Thread(target=runner, daemon=True)
+    thread.start()
+    thread.join()
+    if error:
+        raise error[0]
+    return value[0] if value else None
+
+
+def _extract_uid(value: str) -> Optional[str]:
+    value = value.strip()
+    if UID_PATTERN.fullmatch(value):
+        return value
+    try:
+        parsed = urlparse(value if "://" in value else f"https://{value}")
+    except ValueError:
+        return None
+    if parsed.hostname not in ALLOWED_PROFILE_HOSTS:
+        return None
+    for segment in reversed(parsed.path.split("/")):
+        if UID_PATTERN.fullmatch(segment):
+            return segment
     return None
 
 
-async def check_status_gold(uid):
-    """Kiểm tra trạng thái Gold qua Fake RC API"""
-    url = f"{FAKE_RC_URL}/v1/subscribers/{uid}"
+async def resolve_uid(user_input: str) -> Optional[str]:
+    """Resolve a raw id or known profile URL; remote lookup is opt-in."""
+    direct_uid = _extract_uid(user_input)
+    if direct_uid or not REMOTE_STATUS_ENABLED:
+        return direct_uid
+    username = user_input.strip().strip("/")
+    if not username or "/" in username or len(username) > 80:
+        return None
     try:
-        async with aiohttp.ClientSession() as session:
-            async with session.get(url, timeout=10) as res:
-                if res.status == 200:
-                    data = await res.json()
-                    subs = data.get('subscriber', {})
-                    gold_ent = subs.get('entitlements', {}).get('Gold', {})
-                    if gold_ent:
-                        return {
-                            "active": gold_ent.get('is_active', False),
-                            "expires": gold_ent.get('expires_date', 'Forever (2099)')
-                        }
-    except Exception as e:
-        print(f"Error check status: {e}")
-    return {"active": False, "expires": "N/A"}
+        async with aiohttp.ClientSession(timeout=REQUEST_TIMEOUT) as session:
+            async with session.get(f"https://locket.cam/{username}", headers={"User-Agent": "LocketGoldDemo/1.0"}) as response:
+                if response.status != 200:
+                    return None
+                html = await response.text(errors="ignore")
+    except (aiohttp.ClientError, asyncio.TimeoutError):
+        return None
+    match = re.search(r"/invites/([A-Za-z0-9]{28})", html)
+    return match.group(1) if match else None
 
 
-async def inject_gold(uid):
-    """Tiêm Gold qua fake API (không cần token phức tạp vì worker trả về luôn)"""
-    # Với fake API, chúng ta chỉ cần gọi endpoint subscribers để tạo entitlement
-    # Thực tế thì do Worker trả về đã có subscription sẵn sàng
-    # Chỉ cần verify thôi
-    status = await check_status_gold(uid)
-    return status
+async def check_status_gold(uid: str) -> Dict[str, Any]:
+    """Read status from the explicitly configured test endpoint."""
+    if not REMOTE_STATUS_ENABLED or not FAKE_RC_URL:
+        return {"active": False, "expires": None, "source": "demo", "message": "Chế độ demo: chưa kết nối nguồn trạng thái."}
+    try:
+        async with aiohttp.ClientSession(timeout=REQUEST_TIMEOUT) as session:
+            async with session.get(f"{FAKE_RC_URL}/v1/subscribers/{uid}") as response:
+                if response.status != 200:
+                    return {"active": False, "expires": None, "source": "remote", "message": f"Nguồn trả về HTTP {response.status}."}
+                data = await response.json(content_type=None)
+    except (aiohttp.ClientError, asyncio.TimeoutError, json.JSONDecodeError):
+        return {"active": False, "expires": None, "source": "remote", "message": "Không thể kết nối nguồn trạng thái."}
+    entitlement = data.get("subscriber", {}).get("entitlements", {}).get("Gold", {})
+    return {"active": bool(entitlement.get("is_active", entitlement.get("active", False))), "expires": entitlement.get("expires_date"), "source": "remote", "message": "Đã nhận trạng thái từ nguồn đã cấu hình."}
 
 
-# ═════════════════════════════════════════════════════════════════
-# ROUTES FLASK
-# ═════════════════════════════════════════════════════════════════
+def write_guide(uid: str, status: Dict[str, Any]) -> str:
+    state = "đang hoạt động" if status.get("active") else "chưa hoạt động"
+    guide = f"""Locket Gold — báo cáo kiểm tra
+{'=' * 32}
 
-@app.route("/")
-def index():
-    """Trang chính - nhập username"""
-    return render_template("index.html", result=results.get("last_result", None))
+UID: {uid}
+Trạng thái: {state}
+Nguồn: {status.get('source', 'demo')}
+Hết hạn: {status.get('expires') or 'Không có dữ liệu'}
+
+{status.get('message', '')}
+
+Nếu trạng thái "đang hoạt động", bạn có thể tiếp tục sử dụng Locket Gold bình thường mà không cần VPN.
+"""
+    (OUTPUT_DIR / "guide.txt").write_text(guide, encoding="utf-8")
+    return "guide.txt"
 
 
-@app.route("/activate", methods=["POST"])
+@app.get("/")
+def index() -> str:
+    with _state_lock:
+        result = dict(_last_result) if _last_result else None
+    return render_template("index.html", result=result, remote_enabled=REMOTE_STATUS_ENABLED and bool(FAKE_RC_URL))
+
+
+@app.post("/activate")
 def activate():
-    """Xử lý kích hoạt Gold"""
-    global results
-    
-    user_input = request.form.get("username", "").strip()
-    if not user_input:
-        return jsonify({"error": "Vui lòng nhập username hoặc link"}), 400
-    
-    # Bước 1: Resolve UID
-    loop = asyncio.new_event_loop()
-    asyncio.set_event_loop(loop)
-    
-    uid = loop.run_until_complete(resolve_uid(user_input))
+    """Perform a status check for the supplied UID or profile URL."""
+    raw_input = request.form.get("username", "")
+    if not raw_input:
+        raw_input = str((request.get_json(silent=True) or {}).get("username", ""))
+    raw_input = raw_input.strip()
+    if not raw_input:
+        return jsonify(error="Vui lòng nhập UID hoặc link hồ sơ."), 400
+    if len(raw_input) > 512:
+        return jsonify(error="Giá trị nhập quá dài."), 400
+    uid = _run_async(resolve_uid(raw_input))
     if not uid:
-        return jsonify({"error": "Không tìm thấy UID. Kiểm tra username/link có đúng không?"}), 404
-    
-    # Bước 2: Kiểm tra/status
-    result = loop.run_until_complete(inject_gold(uid))
-    
-    # Bước 3: Lấy IP worker (cần nslookup)
-    try:
-        import subprocess
-        ns_result = subprocess.run(
-            ["nslookup", f"rc-fake-api.YOUR_SUBDOMAIN.workers.dev"],
-            capture_output=True, text=True
-        )
-        # Lấy IP từ output (dòng có Address)
-        lines = ns_result.stdout.split("\n")
-        worker_ip = ""
-        for line in lines:
-            if "Address:" in line and not line.startswith("Server:"):
-                worker_ip = line.split("Address:")[1].strip()
-                break
-        if not worker_ip:
-            worker_ip = "104.16.110.240"  # IP mặc định
-    except:
-        worker_ip = "104.16.110.240"
-    
-    # Bước 4: Generate hướng dẫn DNS
-    # Cần NextDNS ID - lấy từ URL profile
-    nextdns_id = "ab12cd"  # User cần replace
-    
-    guide_path, mc_path = generate_mobileconfig_guide(worker_ip, nextdns_id)
-    
-    # Lưu kết quả
-    results = {
-        "last_result": result,
-        "uid": uid,
-        "guide_path": guide_path,
-        "mc_path": mc_path,
-        "worker_ip": worker_ip,
-        "status": "completed"
-    }
-    
-    # Trả về kết quả
-    return jsonify({
-        "success": True,
-        "uid": uid,
-        "gold_active": result["active"],
-        "expires": result["expires"],
-        "guide_file": "guide.txt",
-        "mobileconfig_file": "mobileconfig.tmp",
-        "worker_ip": worker_ip
-    })
+        return jsonify(error="Không tìm thấy UID hợp lệ. Vui lòng kiểm tra username hoặc link."), 422
+    status = _run_async(check_status_gold(uid))
+    guide_file = write_guide(uid, status)
+    result = {"uid": uid, **status, "guide_file": guide_file}
+    global _last_result
+    with _state_lock:
+        _last_result = result
+    return jsonify(success=True, mode="status-check", **result)
 
 
-# ═════════════════════════════════════════════════════════════════
-# CHẠY SERVER
-# ═════════════════════════════════════════════════════════════════
+@app.get("/download/<path:filename>")
+def download_file(filename: str):
+    if filename != "guide.txt":
+        return jsonify(error="Tệp không tồn tại."), 404
+    return send_from_directory(OUTPUT_DIR, filename, as_attachment=True, download_name=filename)
 
-@app.route("/download/<filename>")
-def download_file(filename):
-    """Cung cấp file hướng dẫn/mobileconfig cho download"""
-    return send_file(f"output/{filename}", as_attachment=True)
+
+@app.get("/healthz")
+def healthz():
+    return jsonify(ok=True, mode="remote" if REMOTE_STATUS_ENABLED and FAKE_RC_URL else "demo")
+
+
+@app.errorhandler(413)
+def request_too_large(_error):
+    return jsonify(error="Dữ liệu gửi lên quá lớn."), 413
 
 
 if __name__ == "__main__":
-    print("""
- ═══════════════════════════════════════════════════════════
- 🌐 LOCKET GOLD WEB APP - Chạy kèm DNS setup
- ═══════════════════════════════════════════════════════════
- ✅ Web: http://127.0.0.1:5000
- ✅ Cắm kết nối: Username → Kích Gold → Lấy guide DNS
- ═══════════════════════════════════════════════════════════
-""")
-    
-    # Cập nhật FAKE_RC_URL với domain thực
-    print("⚠️  NHỚ: Điền FAKE_RC_URL đúng worker của bạn trước khi chạy!")
-    
-    app.run(host="0.0.0.0", port=5000, debug=False)
+    app.run(host=os.getenv("HOST", "127.0.0.1"), port=int(os.getenv("PORT", "5000")), debug=False)
